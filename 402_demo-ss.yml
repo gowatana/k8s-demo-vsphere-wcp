@@ -1,0 +1,24 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: nginx-ss
+spec:
+  serviceName: demo-svc
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cns-demo
+      environment: cns-demo-1
+  template:
+    metadata:
+      labels:
+        app: cns-demo
+        environment: cns-demo-1
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx
+        ports:
+        - containerPort: 80
+
