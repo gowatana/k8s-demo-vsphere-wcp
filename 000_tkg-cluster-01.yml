@@ -1,0 +1,30 @@
+apiVersion: run.tanzu.vmware.com/v1alpha1    
+kind: TanzuKubernetesCluster                 
+metadata:
+  name: tkg-cluster-01                                
+  namespace: ns-tkg-01
+spec:
+  distribution:
+    #version: v1.16.4+vmware.1-tkg.1.886c781    #The full image name is specified 
+    version: v1.16.8
+  topology:
+    controlPlane:
+      count: 3                                 #3 control plane nodes                       
+      class: guaranteed-small
+      storageClass: st-policy-nfs-vsk-01       #Specific storage class for control plane       
+    workers:
+      count: 4                                 #5 worker nodes                     
+      class: guaranteed-small
+      storageClass: st-policy-nfs-vsk-01       #Specific storage class for workers     
+  settings:
+    network:
+      cni:
+        name: calico
+      services:
+        cidrBlocks: ["198.51.100.0/12"]     #Cannot overlap with Supervisor Cluster
+      pods:
+        cidrBlocks: ["192.0.2.0/16"]        #Cannot overlap with Supervisor Cluster
+    storage:
+      classes: ["st-policy-nfs-vsk-01"]     #Named PVC storage classes
+      defaultClass: st-policy-nfs-vsk-01    #Default PVC storage class
+
