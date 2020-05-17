@@ -1,5 +1,7 @@
 vsphere-plugin.zip
 bin
+kubeconfig
 demo-ss_with-cns.yml
 tkg-cluster-01.yml
+demo-ss_with-cns_tanzu.yml
 
