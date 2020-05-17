@@ -331,6 +331,12 @@ service "cns-demo-svc" deleted
 
 # Create Tanzu Kubernetes Cluster
 
+## set env
+
+```
+$ NS=lab-ns-02
+```
+
 ## env check
 
 get Namespace.
@@ -403,7 +409,7 @@ $ diff 000_tkg-cluster-01.yml tkg-cluster-01.yml
 create tanzu kubernetes cluster.
 
 ```
-$ kubectl -n lab-ns-02 apply -f tkg-cluster-01.yml
+$ kubectl -n $NS apply -f tkg-cluster-01.yml
 tanzukubernetescluster.run.tanzu.vmware.com/tkg-cluster-01 created
 $ kubectl get -n lab-ns-02 tanzukubernetesclusters.run.tanzu.vmware.com
 NAME             CONTROL PLANE   WORKER   DISTRIBUTION                     AGE   PHASE
@@ -413,7 +419,7 @@ tkg-cluster-01   3               3        v1.16.8+vmware.1-tkg.3.60d2ffd   29m  
 login
 
 ```
-$ kubectl vsphere login --server=192.168.70.33 --insecure-skip-tls-verify --tanzu-kubernetes-cluster-namespace=lab-ns-02 --tanzu-kubernetes-cluster-name=tkg-cluster-01
+$ kubectl vsphere login --server=$SCP_NODE --insecure-skip-tls-verify --tanzu-kubernetes-cluster-namespace=$NS --tanzu-kubernetes-cluster-name=tkg-cluster-01
 
 Username: administrator@vsphere.local
 Password:
