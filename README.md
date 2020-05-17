@@ -571,4 +571,136 @@ service "kuard-svc" deleted
 deployment.apps "kuard" deleted
 ```
 
+## demo 3-B: 
+
+WIP
+
+## demo 4-B:
+
+get StorageClass.
+
+```
+$ kubectl get sc vm-storage-policy-nfs-vsk
+NAME                                  PROVISIONER              AGE
+vm-storage-policy-nfs-vsk (default)   csi.vsphere.vmware.com   4h58m
+$ kubectl get sc vm-storage-policy-nfs-vsk -o yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  creationTimestamp: "2020-05-17T09:14:31Z"
+  labels:
+    isSyncedFromSupervisor: "yes"
+  name: vm-storage-policy-nfs-vsk
+  resourceVersion: "71"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/vm-storage-policy-nfs-vsk
+  uid: 5993a64d-f788-46ce-ad46-ed21896fd7f2
+parameters:
+  svStorageClass: vm-storage-policy-nfs-vsk
+provisioner: csi.vsphere.vmware.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+```
+
+create service.
+
+```
+$ kubectl apply -f 401_cns-demo-svc.yml
+service/cns-demo-svc created
+```
+
+create StatefulSet.
+
+```
+$ kubectl apply -f 402_demo-ss.yml
+statefulset.apps/nginx-ss created
+$ kubectl get statefulset
+NAME       READY   AGE
+nginx-ss   3/3     5m58s
+$ kubectl get all
+NAME             READY   STATUS    RESTARTS   AGE
+pod/nginx-ss-0   1/1     Running   0          6m18s
+pod/nginx-ss-1   1/1     Running   0          6m10s
+pod/nginx-ss-2   1/1     Running   0          5m15s
+
+NAME                   TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
+service/cns-demo-svc   LoadBalancer   198.63.121.84   192.168.70.37   80:30112/TCP   6m28s
+
+NAME                        READY   AGE
+statefulset.apps/nginx-ss   3/3     6m18s
+```
+
+delete StatefulSet.
+
+```
+$ kubectl delete -f 402_demo-ss.yml
+statefulset.apps "nginx-ss" deleted
+```
+
+create yaml.
+
+```
+$ sed "s/vsan-ftt-0/vm-storage-policy-nfs-vsk/" 403_demo-ss_with-cns.yml > demo-ss_with-cns_tanzu.yml
+$ diff 403_demo-ss_with-cns.yml demo-ss_with-cns_tanzu.yml
+31c31
+<         volume.beta.kubernetes.io/storage-class: "vsan-ftt-0"
+---
+>         volume.beta.kubernetes.io/storage-class: "vm-storage-policy-nfs-vsk"
+```
+
+re-create StatefulSet. (with PVC)
+
+```
+$ kubectl apply -f demo-ss_with-cns_tanzu.yml
+statefulset.apps/nginx-ss created
+```
+
+get all.
+
+```
+$ kubectl get all
+NAME             READY   STATUS    RESTARTS   AGE
+pod/nginx-ss-0   1/1     Running   0          2m32s
+pod/nginx-ss-1   1/1     Running   0          102s
+pod/nginx-ss-2   1/1     Running   0          40s
+
+NAME                   TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
+service/cns-demo-svc   LoadBalancer   198.63.121.84   192.168.70.37   80:30112/TCP   11m
+
+NAME                        READY   AGE
+statefulset.apps/nginx-ss   3/3     2m33s
+```
+
+get pvc.
+
+```
+$ kubectl get pvc
+NAME                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS                AGE
+demo-pvc-nginx-ss-0   Bound    pvc-9531a4ff-8230-4e36-96bc-c395ea64b91c   2Gi        RWO            vm-storage-policy-nfs-vsk   5m31s
+demo-pvc-nginx-ss-1   Bound    pvc-25cd1ed4-c48b-4296-bd70-9bd05d92b388   2Gi        RWO            vm-storage-policy-nfs-vsk   4m41s
+demo-pvc-nginx-ss-2   Bound    pvc-dcafc47b-1fdc-41cf-9b81-e76bce12f906   2Gi        RWO            vm-storage-policy-nfs-vsk   3m39s
+```
+
+get pv.
+
+```
+$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                      STORAGECLASS                REASON   AGE
+pvc-25cd1ed4-c48b-4296-bd70-9bd05d92b388   2Gi        RWO            Delete           Bound    demo/demo-pvc-nginx-ss-1   vm-storage-policy-nfs-vsk            4m27s
+pvc-9531a4ff-8230-4e36-96bc-c395ea64b91c   2Gi        RWO            Delete           Bound    demo/demo-pvc-nginx-ss-0   vm-storage-policy-nfs-vsk            5m40s
+pvc-dcafc47b-1fdc-41cf-9b81-e76bce12f906   2Gi        RWO            Delete           Bound    demo/demo-pvc-nginx-ss-2   vm-storage-policy-nfs-vsk            3m52s
+```
+
+delete StatefulSet and PVC.
+
+```
+$ kubectl delete -f demo-ss_with-cns_tanzu.yml
+statefulset.apps "nginx-ss" deleted
+$ kubectl delete pvc --all
+persistentvolumeclaim "demo-pvc-nginx-ss-0" deleted
+persistentvolumeclaim "demo-pvc-nginx-ss-1" deleted
+persistentvolumeclaim "demo-pvc-nginx-ss-2" deleted
+```
+
 EOF
