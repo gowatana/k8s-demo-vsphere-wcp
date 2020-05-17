@@ -2,8 +2,7 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: rolebind-default-privileged-ns_demo_serviceaccounts
-  namespace: demo
+  name: rolebind-privileged-serviceaccounts
 roleRef:
   kind: ClusterRole
   name: psp:vmware-system-privileged
