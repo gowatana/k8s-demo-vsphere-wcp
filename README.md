@@ -329,4 +329,77 @@ $ kubectl delete svc cns-demo-svc
 service "cns-demo-svc" deleted
 ```
 
+# Create Tanzu Kubernetes Cluster
+
+## env check
+
+get Namespace.
+
+```
+$ kubectl get ns
+NAME                      STATUS   AGE
+default                   Active   36h
+kube-node-lease           Active   36h
+kube-public               Active   36h
+kube-system               Active   36h
+lab-ns-01                 Active   26h
+lab-ns-02                 Active   8m8s
+vmware-system-capw        Active   36h
+vmware-system-csi         Active   36h
+vmware-system-kubeimage   Active   36h
+vmware-system-nsx         Active   36h
+vmware-system-registry    Active   36h
+vmware-system-tkg         Active   36h
+vmware-system-ucs         Active   36h
+vmware-system-vmop        Active   36h
+```
+
+get VirtualMachineClasses
+
+```
+$ kubectl get virtualmachineclasses
+NAME                 AGE
+best-effort-large    36h
+best-effort-medium   36h
+best-effort-small    36h
+best-effort-xlarge   36h
+best-effort-xsmall   36h
+guaranteed-large     36h
+guaranteed-medium    36h
+guaranteed-small     36h
+guaranteed-xlarge    36h
+guaranteed-xsmall    36h
+```
+
+create yaml.
+
+```
+$ sed "s/vsan-ftt-0/vm-storage-policy-nfs-vsk/" 000_tkg-cluster-01.yml > tkg-cluster-01.yml
+$ diff 000_tkg-cluster-01.yml tkg-cluster-01.yml
+14c14
+<       storageClass: vsan-ftt-0
+---
+>       storageClass: vm-storage-policy-nfs-vsk
+18c18
+<       storageClass: vsan-ftt-0
+---
+>       storageClass: vm-storage-policy-nfs-vsk
+28,29c28,29
+<       classes: ["vsan-ftt-0"]           # Named PVC storage classes
+<       defaultClass: vsan-ftt-0          # Default PVC storage class
+---
+>       classes: ["vm-storage-policy-nfs-vsk"]           # Named PVC storage classes
+>       defaultClass: vm-storage-policy-nfs-vsk          # Default PVC storage class
+```
+
+create tanzu kubernetes cluster.
+
+```
+$ kubectl -n lab-ns-02 apply -f tkg-cluster-01.yml
+tanzukubernetescluster.run.tanzu.vmware.com/tkg-cluster-01 created
+$ kubectl get -n lab-ns-02 tanzukubernetesclusters.run.tanzu.vmware.com
+NAME             CONTROL PLANE   WORKER   DISTRIBUTION                     AGE   PHASE
+tkg-cluster-01   3               3        v1.16.8+vmware.1-tkg.3.60d2ffd   97s   creating
+```
+
 EOF
