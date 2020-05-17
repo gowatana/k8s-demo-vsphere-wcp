@@ -407,7 +407,47 @@ $ kubectl -n lab-ns-02 apply -f tkg-cluster-01.yml
 tanzukubernetescluster.run.tanzu.vmware.com/tkg-cluster-01 created
 $ kubectl get -n lab-ns-02 tanzukubernetesclusters.run.tanzu.vmware.com
 NAME             CONTROL PLANE   WORKER   DISTRIBUTION                     AGE   PHASE
-tkg-cluster-01   3               3        v1.16.8+vmware.1-tkg.3.60d2ffd   97s   creating
+tkg-cluster-01   3               3        v1.16.8+vmware.1-tkg.3.60d2ffd   29m   running
+```
+
+login
+
+```
+$ kubectl vsphere login --server=192.168.70.33 --insecure-skip-tls-verify --tanzu-kubernetes-cluster-namespace=lab-ns-02 --tanzu-kubernetes-cluster-name=tkg-cluster-01
+
+Username: administrator@vsphere.local
+Password:
+Logged in successfully.
+
+You have access to the following contexts:
+   192.168.70.33
+   192.168.70.5
+   lab-ns-01
+   lab-ns-02
+   tkg-cluster-01
+
+If the context you wish to use is not in this list, you may need to try
+logging in again later, or contact your cluster administrator.
+
+To change context, use `kubectl config use-context <workload name>`
+```
+
+get current-context.
+
+```
+$ kubectl config current-context
+tkg-cluster-01
+$ kubectl config get-contexts tkg-cluster-01
+CURRENT   NAME             CLUSTER         AUTHINFO                                        NAMESPACE
+*         tkg-cluster-01   192.168.70.34   wcp:192.168.70.34:administrator@vsphere.local
+$ kubectl get nodes
+NAME                                            STATUS   ROLES    AGE     VERSION
+tkg-cluster-01-control-plane-hd6pf              Ready    master   2m2s    v1.16.8+vmware.1
+tkg-cluster-01-control-plane-n9pj7              Ready    master   26m     v1.16.8+vmware.1
+tkg-cluster-01-control-plane-tvbp7              Ready    master   5m21s   v1.16.8+vmware.1
+tkg-cluster-01-workers-82dgq-7d6659ccd9-q44tw   Ready    <none>   106s    v1.16.8+vmware.1
+tkg-cluster-01-workers-82dgq-7d6659ccd9-xbq9j   Ready    <none>   115s    v1.16.8+vmware.1
+tkg-cluster-01-workers-82dgq-7d6659ccd9-zcqgp   Ready    <none>   12m     v1.16.8+vmware.1
 ```
 
 EOF
