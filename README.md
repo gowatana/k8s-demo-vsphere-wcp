@@ -371,6 +371,14 @@ guaranteed-xlarge    36h
 guaranteed-xsmall    36h
 ```
 
+get VM VirtualMachineImages from Contents library.
+
+```
+$ kubectl get virtualmachineimages
+NAME                                                        AGE
+ob-15957779-photon-3-k8s-v1.16.8---vmware.1-tkg.3.60d2ffd   22m
+```
+
 create yaml.
 
 ```
