@@ -21,7 +21,7 @@ Archive:  vsphere-plugin.zip
 set PATH
 
 ```
-export PATH=$(pwd)/bin:$PATH
+$ export PATH=$(pwd)/bin:$PATH
 $ which kubectl
 ~/k8s-demo-vsphere-wcp/bin/kubectl
 $ kubectl version --client
@@ -454,6 +454,121 @@ tkg-cluster-01-control-plane-tvbp7              Ready    master   5m21s   v1.16.
 tkg-cluster-01-workers-82dgq-7d6659ccd9-q44tw   Ready    <none>   106s    v1.16.8+vmware.1
 tkg-cluster-01-workers-82dgq-7d6659ccd9-xbq9j   Ready    <none>   115s    v1.16.8+vmware.1
 tkg-cluster-01-workers-82dgq-7d6659ccd9-zcqgp   Ready    <none>   12m     v1.16.8+vmware.1
+```
+## create demo Namespace.
+
+```
+$ kubectl create ns demo
+namespace/demo created
+```
+
+create RoleBindig for PodSecurityPolicy.
+
+```
+$ kubectl -n demo apply -f 001_rolebinding_demo.yaml
+rolebinding.rbac.authorization.k8s.io/rolebind-default-privileged-ns_demo_serviceaccounts created
+```
+
+## demo 1-B: 
+
+create service and deployment.
+
+```
+$ kubectl -n demo apply -f 101_demo-svc.yml,102_demo-dep.yml
+service/demo-svc created
+deployment.apps/demo-deploy created
+```
+
+get all.
+
+```$ kubectl -n demo get all
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/demo-deploy-7f8745d7bb-kbbfx   1/1     Running   0          66s
+pod/demo-deploy-7f8745d7bb-q8kcj   1/1     Running   0          66s
+
+NAME               TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
+service/demo-svc   LoadBalancer   198.61.33.231   192.168.70.36   80:32422/TCP   66s
+
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/demo-deploy   2/2     2            2           66s
+
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/demo-deploy-7f8745d7bb   2         2         2       67s
+```
+
+access service.
+
+```
+$ kubectl -n demo get svc demo-svc --no-headers | echo "http://$(awk '{print $4}')/"
+http://192.168.70.36/
+$ curl http://192.168.70.36/
+```
+
+delete
+
+```
+$ kubectl -n demo delete -f 101_demo-svc.yml,102_demo-dep.yml
+service "demo-svc" deleted
+deployment.apps "demo-deploy" deleted
+```
+
+## demo 2-B: 
+
+get current namespace.
+
+```
+$ kubectl config current-context
+tkg-cluster-01
+$ kubectl config get-contexts tkg-cluster-01
+CURRENT   NAME             CLUSTER         AUTHINFO                                        NAMESPACE
+*         tkg-cluster-01   192.168.70.34   wcp:192.168.70.34:administrator@vsphere.local
+```
+
+set namespace.
+
+```
+$ kubectl config set-context --current --namespace=demo
+Context "tkg-cluster-01" modified.
+$ kubectl config get-contexts tkg-cluster-01
+CURRENT   NAME             CLUSTER         AUTHINFO                                        NAMESPACE
+*         tkg-cluster-01   192.168.70.34   wcp:192.168.70.34:administrator@vsphere.local   demo
+```
+
+create service and deployment.
+
+```
+$ kubectl apply -f 201_kuard-svc.yml,202_kuard-dep.yml
+service/kuard-svc created
+deployment.apps/kuard created
+$ kubectl -n demo get svc kuard-svc --no-headers | echo "http://$(awk '{print $4}')/"
+http://192.168.70.36/
+```
+
+get all.
+
+```
+$ kubectl get all
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/kuard-59c44f7c97-76c86   1/1     Running   0          73s
+pod/kuard-59c44f7c97-qdzv9   1/1     Running   0          73s
+pod/kuard-59c44f7c97-wjj8f   1/1     Running   0          73s
+
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+service/kuard-svc   LoadBalancer   198.56.86.16   192.168.70.36   80:31303/TCP   74s
+
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/kuard   3/3     3            3           73s
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/kuard-59c44f7c97   3         3         3       73s
+```
+
+delete.
+
+```
+$ kubectl delete -f 201_kuard-svc.yml,202_kuard-dep.yml
+service "kuard-svc" deleted
+deployment.apps "kuard" deleted
 ```
 
 EOF
