@@ -1,13 +1,13 @@
-# k8s-demo-vsphere-wcp
+# vSphere 7 with k8s DEMO
 
-set env.
+Superviser Cluster 有効化した環境を使ってみる。
+* vSphere Pod のデモ →【WCP】
+* Tanzu Kubernetes Cluster の作成
+* Tanzu Kubernetes Cluster でのデモ →【TKC】
 
-```
-$ SCP_NODE=192.168.70.33
-$ KUBECONFIG=./kubeconfig
-```
+# 準備
 
-Download kubectl.
+kubectl のダウンロード
 
 ```
 $ curl -k -L -O https://${SCP_NODE}/wcp/plugin/linux-amd64/vsphere-plugin.zip
@@ -18,7 +18,13 @@ Archive:  vsphere-plugin.zip
   inflating: bin/kubectl
 ```
 
-set PATH
+環境変数を調整。
+* TODO: 一連の環境変数設定を整理する。useradd する？
+
+```
+$ SCP_NODE=192.168.70.33
+$ KUBECONFIG=./kubeconfig
+```
 
 ```
 $ export PATH=$(pwd)/bin:$PATH
@@ -30,9 +36,13 @@ $ kubectl-vsphere version
 kubectl-vsphere: version 0.0.1, build 15839988, change 7857139
 ```
 
-# WCP / vSphere Pod
+# 【WCP】WCP / vSphere Pod を使ってみる。
 
-## Login.
+## 【WCP】Demo 0: Namespace の作成。
+
+まず、vSphere Client で Namespace を作成しておく。
+
+## 【WCP】kubectl でログイン。
 
 ```
 $ kubectl vsphere login --server=$SCP_NODE --insecure-skip-tls-verify
@@ -52,16 +62,17 @@ logging in again later, or contact your cluster administrator.
 To change context, use `kubectl config use-context <workload name>`
 ```
 
-change context
+context を変更
 
 ```
 $ kubectl config use-context lab-ns-01
 Switched to context "lab-ns-01".
 ```
 
-## create pod.
 
-Run Pod.
+## 【WCP】Demo 1: Pod の作成。
+
+Pod の作成。
 
 ```
 $ kubectl run -it --image=centos:7 --labels="app=jumpbox" --generator=run-pod/v1 --rm jbox
@@ -71,7 +82,8 @@ If you don't see a command prompt, try pressing enter.
 CentOS Linux release 7.8.2003 (Core)
 ```
 
-check nw connection, and show podvnic.
+vSphere Pod 内から、NIC（podvnic）を見てみる。
+* TODO: コンテナイメージを変更して、はじめから ip コマンドが入っている状態にする。
 
 ```
 [root@jbox /]# yum install -y iproute
@@ -86,7 +98,15 @@ check nw connection, and show podvnic.
        valid_lft forever preferred_lft forever
 ```
 
-## Demo 1: Create Service and Deployment (Pods).
+コンテナから exit。→ Pod は自動削除される。（--rm により）
+
+```
+$ exit
+```
+
+Service を作成。
+
+* Type が LoadBalancer で、EXTERNAL-IP が払いだされていることを確認。
 
 ```
 $ kubectl apply -f 101_demo-svc.yml
@@ -97,6 +117,10 @@ $ kubectl get svc
 NAME       TYPE           CLUSTER-IP   EXTERNAL-IP     PORT(S)        AGE
 demo-svc   LoadBalancer   10.96.0.60   192.168.70.34   80:30688/TCP   2m29s
 ```
+
+ Deployment を作成。
+
+ * Deployment の Ready が 2/2 になることを確認。
 
 ```
 $ kubectl apply -f 102_demo-dep.yml
@@ -116,7 +140,10 @@ NAME                                     DESIRED   CURRENT   READY   AGE
 replicaset.apps/demo-deploy-7f8745d7bb   2         2         2       6m46s
 ```
 
-access demo-svc service.
+Web ブラウザから demo-svc Service にアクセスしてみる。
+
+* Tera Term であれば、表示された URL ダブルクリックでブラウザが開く。
+* Nginx の Welcome ページが表示されるはず。
 
 ```
 $ kubectl get svc demo-svc | awk '{print $4}'
@@ -134,7 +161,7 @@ $ curl -s $DEMO_SVC_IP:80 | head -n 4
 <title>Welcome to nginx!</title>
 ```
 
-delete demo service and deployment.
+環境の初期化。service と deployment を削除しておく。
 
 ```
 $ kubectl delete -f 101_demo-svc.yml -f 102_demo-dep.yml
@@ -142,9 +169,9 @@ service "demo-svc" deleted
 deployment.apps "demo-deploy" deleted
 ```
 
-## Demo 2: LB test.
+## 【WCP】Demo 2: Service LoadBalancer の動作テスト。
 
-create service and deployment.
+service と deployment を作成する。
 
 ```
 $ kubectl apply -f 201_kuard-svc.yml
@@ -153,7 +180,7 @@ $ kubectl apply -f 202_kuard-dep.yml
 deployment.apps/kuard created
 ```
 
-get all.
+Service の作成、kuard の Pod がすべて READY になったことを確認しておく。
 
 ```
 $ kubectl get all
@@ -172,15 +199,16 @@ NAME                               DESIRED   CURRENT   READY   AGE
 replicaset.apps/kuard-59c44f7c97   3         3         3       98s
 ```
 
-access kuard-svc from a Web browser.  
-It should be a round robin of 3 nodes.
+kuard-svc の External-IP に Web browser からアクセス。 
+
+* ブラウザ更新して、3つの Pod（コンテナ。Web サーバ）に振り分けられることを確認する。
 
 ```
 $ kubectl get svc kuard-svc --no-headers | echo "http://$(awk '{print $4}')/"
 http://192.168.70.35/
 ```
 
-delete delete demo 2.
+環境の初期化。
 
 ```
 $ kubectl delete -f 201_kuard-svc.yml,202_kuard-dep.yml
@@ -188,13 +216,17 @@ service "kuard-svc" deleted
 deployment.apps "kuard" deleted
 ```
 
-## Demo 3: NetworkPolicy test.
+## 【WCP】Demo 3: NetworkPolicy を使用してみる。
 
 WIP
 
-## Demo 4: Cloud Native Storage (PVC) test.
+* kubect apply -f 30N_xxx.yml で NetworkPolicy を作成。
+* NSX-T の DFW ルールを確認する。
 
-get StorageClass.
+## 【WCP】Demo 4: Cloud Native Storage (PVC) を使用してみる.
+
+StorageClass の確認。
+* あらかじめ、vSphere Client で、Namespace での 仮想マシン ストレージ ポリシー 設定をしておく。
 
 ```
 $ kubectl get sc
@@ -216,7 +248,10 @@ reclaimPolicy: Delete
 volumeBindingMode: Immediate
 ```
 
-create service.
+Service の作成。
+
+* CNS には直接関係ないが、Pod でにアクセスしてみるために作成しておく。
+* StatefulSet は何度か再作成するので、あえて Yaml を独立させた。
 
 ```
 $ kubectl apply -f 401_cns-demo-svc.yml
@@ -228,7 +263,9 @@ $ kubectl get svc cns-demo-svc --no-headers | echo "http://$(awk '{print $4}')/"
 http://192.168.70.34/
 ```
 
-create pods (StatefulSet) without PV.
+StatefulSet（CNS なし）を作成。
+
+* Deploymnt の時との違いを説明。
 
 ```
 $ kubectl get all
@@ -244,14 +281,17 @@ NAME                        READY   AGE
 statefulset.apps/nginx-ss   3/3     67s
 ```
 
-delete StatefulSet, in preparation for re-creation.
+いったん、StatefulSet を削除する。
+* CNS を使う StatefulSet を再作成するため。
 
 ```
 $ kubectl delete -f 402_demo-ss.yml
 statefulset.apps "nginx-ss" deleted
 ```
 
-create yaml.
+YAML ファイルの作成。
+
+* StorageClass の名前が環境（仮想マシン ストレージ ポリシー名）によって変わるため。
 
 ```
 $ sed "s/vsan-ftt-0/vm-storage-policy-nfs-vsk/" 403_demo-ss_with-cns.yml > demo-ss_with-cns.yml
@@ -262,7 +302,10 @@ $ diff 403_demo-ss_with-cns.yml demo-ss_with-cns.yml
 >         volume.beta.kubernetes.io/storage-class: "vm-storage-policy-nfs-vsk"
 ```
 
-create StatefulSet with pvc.
+StatefulSet を作成。（CNS あり）
+
+* Cloud Native Storage（CNS）は、PersistentVolumeClaim（PVC）で使用する。
+* TODO: _ss → _sts にリソース名を修正する。（API の略称にあわせる）
 
 ```
 $ kubectl apply -f demo-ss_with-cns.yml
@@ -280,7 +323,7 @@ NAME                        READY   AGE
 statefulset.apps/nginx-ss   3/3     3m5s
 ```
 
-get pvc.
+PVC の確認。
 
 ```
 $ kubectl get pvc
@@ -290,23 +333,24 @@ demo-pvc-nginx-ss-1   Bound    pvc-22048084-554e-43e1-a23e-1ea4c511db5b   2Gi   
 demo-pvc-nginx-ss-2   Bound    pvc-2dcc144b-1608-4a39-8036-790d3ef7056d   2Gi        RWO            vm-storage-policy-nfs-vsk   113s
 ```
 
-get pv.
+PV は、WCP だと権限がなくて見えなそう。
+* ただし PV は PVC からわかる。
+* vSphere Clint から「クラウド ネイティブ ストレージ」から確認しておく。
 
 ```
 $ kubectl get pv
 Error from server (Forbidden): persistentvolumes is forbidden: User "sso:Administrator@vsphere.local" cannot list resource "persistentvolumes" in API group "" at the cluster scope
 ```
 
-check vSphere Clint - Namespace menu.
-
-delete StatefulSet.
+環境の初期化。（StatefulSet）
 
 ```
 $ kubectl delete -f demo-ss_with-cns.yml
 statefulset.apps "nginx-ss" deleted
 ```
 
-delete PVC.
+環境の初期化。（PVC）
+* PVC は StatefulSet とは別に削除する。
 
 ```
 $ kubectl get pvc
@@ -322,24 +366,19 @@ $ kubectl get pvc
 No resources found in lab-ns-01 namespace.
 ```
 
-delete service.
+環境の初期化。（Service）
 
 ```
 $ kubectl delete svc cns-demo-svc
 service "cns-demo-svc" deleted
 ```
 
-# Create Tanzu Kubernetes Cluster
+# 【TKC】Tanzu Kubernetes Cluster の作成。
 
-## set env
+## あらためてデモ環境の確認。
 
-```
-$ NS=lab-ns-02
-```
-
-## env check
-
-get Namespace.
+Namespace の作成されている様子。
+* これからどこに TKC を作成するか確認する。
 
 ```
 $ kubectl get ns
@@ -360,7 +399,7 @@ vmware-system-ucs         Active   36h
 vmware-system-vmop        Active   36h
 ```
 
-get VirtualMachineClasses
+用意されている VirtualMachineClasses の確認。
 
 ```
 $ kubectl get virtualmachineclasses
@@ -377,7 +416,8 @@ guaranteed-xlarge    36h
 guaranteed-xsmall    36h
 ```
 
-get VM VirtualMachineImages from Contents library.
+用意されている VirtualMachineImages の確認。
+* これは vSphere のコンテンツ ライブラリにある。（事前にサブスクライブ設定＆DL）
 
 ```
 $ kubectl get virtualmachineimages
@@ -385,7 +425,9 @@ NAME                                                        AGE
 ob-15957779-photon-3-k8s-v1.16.8---vmware.1-tkg.3.60d2ffd   22m
 ```
 
-create yaml.
+Kuberenets Cluster の定義をした YAML を用意する。
+
+* StorageClass の名前を環境にあわせて修正している。
 
 ```
 $ sed "s/vsan-ftt-0/vm-storage-policy-nfs-vsk/" 000_tkg-cluster-01.yml > tkg-cluster-01.yml
@@ -406,7 +448,13 @@ $ diff 000_tkg-cluster-01.yml tkg-cluster-01.yml
 >       defaultClass: vm-storage-policy-nfs-vsk          # Default PVC storage class
 ```
 
-create tanzu kubernetes cluster.
+TKC デプロイ先の Namespace を決める。（コピペむけ変数）
+
+```
+$ NS=lab-ns-02
+```
+
+Tanzu kubernetes cluster の作成。
 
 ```
 $ kubectl -n $NS apply -f tkg-cluster-01.yml
@@ -416,7 +464,14 @@ NAME             CONTROL PLANE   WORKER   DISTRIBUTION                     AGE  
 tkg-cluster-01   3               3        v1.16.8+vmware.1-tkg.3.60d2ffd   29m   running
 ```
 
-login
+# 【TKC】Tanzu Kubernetes Cluster を使用してみる。
+
+
+## 【TKC】Demo-1 Tanzu k8s Cluster へのログイン。
+
+TKC にログイン。
+* ダウンロード済みの専用 kubectl を利用する。
+* 指定する NS は、
 
 ```
 $ kubectl vsphere login --server=$SCP_NODE --insecure-skip-tls-verify --tanzu-kubernetes-cluster-namespace=$NS --tanzu-kubernetes-cluster-name=tkg-cluster-01
@@ -438,7 +493,7 @@ logging in again later, or contact your cluster administrator.
 To change context, use `kubectl config use-context <workload name>`
 ```
 
-get current-context.
+current-context を確認。
 
 ```
 $ kubectl config current-context
@@ -455,23 +510,29 @@ tkg-cluster-01-workers-82dgq-7d6659ccd9-q44tw   Ready    <none>   106s    v1.16.
 tkg-cluster-01-workers-82dgq-7d6659ccd9-xbq9j   Ready    <none>   115s    v1.16.8+vmware.1
 tkg-cluster-01-workers-82dgq-7d6659ccd9-zcqgp   Ready    <none>   12m     v1.16.8+vmware.1
 ```
-## create demo Namespace.
+
+##【TKC】Demo-0: Namespace の作成
+
+Namespace を作成する。
 
 ```
 $ kubectl create ns demo
 namespace/demo created
 ```
 
-create RoleBindig for PodSecurityPolicy.
+Pod 作成の準備。
+
+* Deployment, StatefulSet などから Pod を作成するためには PodSecurityPolicy の設定が必要。
+* サービスアカウントむけに、RoleBindig を作成する。
 
 ```
 $ kubectl -n demo apply -f 001_rolebinding_demo.yaml
 rolebinding.rbac.authorization.k8s.io/rolebind-default-privileged-ns_demo_serviceaccounts created
 ```
 
-## demo 1-B: 
+## 【TKC】demo-1: Pod を作成してみる。 
 
-create service and deployment.
+service と deployment を作成。
 
 ```
 $ kubectl -n demo apply -f 101_demo-svc.yml,102_demo-dep.yml
@@ -479,9 +540,10 @@ service/demo-svc created
 deployment.apps/demo-deploy created
 ```
 
-get all.
+作成されたことを確認する。
 
-```$ kubectl -n demo get all
+```
+$ kubectl -n demo get all
 NAME                               READY   STATUS    RESTARTS   AGE
 pod/demo-deploy-7f8745d7bb-kbbfx   1/1     Running   0          66s
 pod/demo-deploy-7f8745d7bb-q8kcj   1/1     Running   0          66s
@@ -496,7 +558,8 @@ NAME                                     DESIRED   CURRENT   READY   AGE
 replicaset.apps/demo-deploy-7f8745d7bb   2         2         2       67s
 ```
 
-access service.
+Web ブラウザから、Service にアクセスしてみる。
+* Nginx Welcome ページが表示される。
 
 ```
 $ kubectl -n demo get svc demo-svc --no-headers | echo "http://$(awk '{print $4}')/"
@@ -504,7 +567,7 @@ http://192.168.70.36/
 $ curl http://192.168.70.36/
 ```
 
-delete
+初期化。
 
 ```
 $ kubectl -n demo delete -f 101_demo-svc.yml,102_demo-dep.yml
@@ -512,9 +575,9 @@ service "demo-svc" deleted
 deployment.apps "demo-deploy" deleted
 ```
 
-## demo 2-B: 
+## 【TKC】demo-2: LB の確認。
 
-get current namespace.
+現在の Context の namespace を確認。
 
 ```
 $ kubectl config current-context
@@ -524,7 +587,8 @@ CURRENT   NAME             CLUSTER         AUTHINFO                             
 *         tkg-cluster-01   192.168.70.34   wcp:192.168.70.34:administrator@vsphere.local
 ```
 
-set namespace.
+ここからはデフォルトのnamespace を変更する。
+* namespace の指定を省略する。
 
 ```
 $ kubectl config set-context --current --namespace=demo
@@ -534,7 +598,7 @@ CURRENT   NAME             CLUSTER         AUTHINFO                             
 *         tkg-cluster-01   192.168.70.34   wcp:192.168.70.34:administrator@vsphere.local   demo
 ```
 
-create service and deployment.
+Service と Deployment を作成。
 
 ```
 $ kubectl apply -f 201_kuard-svc.yml,202_kuard-dep.yml
@@ -544,7 +608,7 @@ $ kubectl -n demo get svc kuard-svc --no-headers | echo "http://$(awk '{print $4
 http://192.168.70.36/
 ```
 
-get all.
+Pod 起動を確認。
 
 ```
 $ kubectl get all
@@ -563,7 +627,7 @@ NAME                               DESIRED   CURRENT   READY   AGE
 replicaset.apps/kuard-59c44f7c97   3         3         3       73s
 ```
 
-delete.
+Web ブラウザからアクセス確認できたら、初期化。
 
 ```
 $ kubectl delete -f 201_kuard-svc.yml,202_kuard-dep.yml
@@ -571,13 +635,16 @@ service "kuard-svc" deleted
 deployment.apps "kuard" deleted
 ```
 
-## demo 3-B: 
+## 【TKC】demo-3: NetworkPolicy。
 
 WIP
 
-## demo 4-B:
+* NSX DFW ではなく、calico によるルールになる。Pod の iptables -L あたりで確認。
 
-get StorageClass.
+## 【TKC】demo-4: CNS を使用してみる。
+
+StorageClass の確認。
+* これは WCP（vSphere Pod） と同じ。
 
 ```
 $ kubectl get sc vm-storage-policy-nfs-vsk
@@ -603,14 +670,14 @@ reclaimPolicy: Delete
 volumeBindingMode: Immediate
 ```
 
-create service.
+service を作成。
 
 ```
 $ kubectl apply -f 401_cns-demo-svc.yml
 service/cns-demo-svc created
 ```
 
-create StatefulSet.
+StatefulSet 作成。（PVCなし）
 
 ```
 $ kubectl apply -f 402_demo-ss.yml
@@ -631,14 +698,14 @@ NAME                        READY   AGE
 statefulset.apps/nginx-ss   3/3     6m18s
 ```
 
-delete StatefulSet.
+StatefulSet をいったん削除。
 
 ```
 $ kubectl delete -f 402_demo-ss.yml
 statefulset.apps "nginx-ss" deleted
 ```
 
-create yaml.
+CNS を使用する StatefulSet の YAML を作成。
 
 ```
 $ sed "s/vsan-ftt-0/vm-storage-policy-nfs-vsk/" 403_demo-ss_with-cns.yml > demo-ss_with-cns_tanzu.yml
@@ -649,14 +716,14 @@ $ diff 403_demo-ss_with-cns.yml demo-ss_with-cns_tanzu.yml
 >         volume.beta.kubernetes.io/storage-class: "vm-storage-policy-nfs-vsk"
 ```
 
-re-create StatefulSet. (with PVC)
+StatefulSet を再作成。（with PVC）
 
 ```
 $ kubectl apply -f demo-ss_with-cns_tanzu.yml
 statefulset.apps/nginx-ss created
 ```
 
-get all.
+コンテナの起動確認。
 
 ```
 $ kubectl get all
@@ -672,7 +739,7 @@ NAME                        READY   AGE
 statefulset.apps/nginx-ss   3/3     2m33s
 ```
 
-get pvc.
+PVC の確認。
 
 ```
 $ kubectl get pvc
@@ -682,7 +749,9 @@ demo-pvc-nginx-ss-1   Bound    pvc-25cd1ed4-c48b-4296-bd70-9bd05d92b388   2Gi   
 demo-pvc-nginx-ss-2   Bound    pvc-dcafc47b-1fdc-41cf-9b81-e76bce12f906   2Gi        RWO            vm-storage-policy-nfs-vsk   3m39s
 ```
 
-get pv.
+PV の確認。
+
+* WCP のように制限されてなく見られる。
 
 ```
 $ kubectl get pv
@@ -692,7 +761,7 @@ pvc-9531a4ff-8230-4e36-96bc-c395ea64b91c   2Gi        RWO            Delete     
 pvc-dcafc47b-1fdc-41cf-9b81-e76bce12f906   2Gi        RWO            Delete           Bound    demo/demo-pvc-nginx-ss-2   vm-storage-policy-nfs-vsk            3m52s
 ```
 
-delete StatefulSet and PVC.
+これでデモ終わり。初期化。
 
 ```
 $ kubectl delete -f demo-ss_with-cns_tanzu.yml
