@@ -265,7 +265,12 @@ http://192.168.70.34/
 
 StatefulSet（CNS なし）を作成。
 
-* Deploymnt の時との違いを説明。
+```
+$ kubectl apply -f 402_demo-ss.yml
+statefulset.apps/nginx-ss created
+```
+
+Pod の起動を確認する。Deploymnt の時との違いを説明。
 
 ```
 $ kubectl get all
@@ -417,7 +422,13 @@ guaranteed-xsmall    36h
 ```
 
 用意されている VirtualMachineImages の確認。
+
 * これは vSphere のコンテンツ ライブラリにある。（事前にサブスクライブ設定＆DL）
+
+  * ドキュメント
+    * https://docs.vmware.com/jp/VMware-vSphere/7.0/vmware-vsphere-with-kubernetes/GUID-77D01137-8C82-4477-A18E-DA935BC121BA.html
+  * コンテンツ ライブラリむけ URL
+    * https://wp-content.vmware.com/v2/latest/lib.json
 
 ```
 $ kubectl get virtualmachineimages
