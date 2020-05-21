@@ -176,7 +176,7 @@ service と deployment を作成する。
 ```
 $ kubectl apply -f 201_kuard-svc.yml
 service/kuard-svc created
-$ kubectl apply -f 202_kuard-dep.yml
+$ kubectl apply -f 202_kuard-deploy.yml
 deployment.apps/kuard created
 ```
 
@@ -211,7 +211,7 @@ http://192.168.70.35/
 環境の初期化。
 
 ```
-$ kubectl delete -f 201_kuard-svc.yml,202_kuard-dep.yml
+$ kubectl delete -f 201_kuard-svc.yml,202_kuard-deploy.yml
 service "kuard-svc" deleted
 deployment.apps "kuard" deleted
 ```
@@ -601,7 +601,7 @@ CURRENT   NAME             CLUSTER         AUTHINFO                             
 Service と Deployment を作成。
 
 ```
-$ kubectl apply -f 201_kuard-svc.yml,202_kuard-dep.yml
+$ kubectl apply -f 201_kuard-svc.yml,202_kuard-deploy.yml
 service/kuard-svc created
 deployment.apps/kuard created
 $ kubectl -n demo get svc kuard-svc --no-headers | echo "http://$(awk '{print $4}')/"
@@ -630,7 +630,7 @@ replicaset.apps/kuard-59c44f7c97   3         3         3       73s
 Web ブラウザからアクセス確認できたら、初期化。
 
 ```
-$ kubectl delete -f 201_kuard-svc.yml,202_kuard-dep.yml
+$ kubectl delete -f 201_kuard-svc.yml,202_kuard-deploy.yml
 service "kuard-svc" deleted
 deployment.apps "kuard" deleted
 ```
