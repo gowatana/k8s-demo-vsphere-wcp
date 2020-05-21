@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kuard
-#  labels:
-#    app: demo-kuard
 spec:
   replicas: 3
   selector:
