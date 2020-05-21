@@ -1,0 +1,9 @@
+# Demo env settings
+SCP_NODE=lab-wcp-01.go-lab.jp
+PS1='$ '
+export KUBECONFIG=./kubeconfig
+
+# kubectl settings
+export PATH=$(pwd)/bin:$PATH
+source <(kubectl completion bash)
+
