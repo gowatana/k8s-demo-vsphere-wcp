@@ -123,7 +123,7 @@ demo-svc   LoadBalancer   10.96.0.60   192.168.70.34   80:30688/TCP   2m29s
  * Deployment の Ready が 2/2 になることを確認。
 
 ```
-$ kubectl apply -f 102_demo-dep.yml
+$ kubectl apply -f 102_demo-deploy.yml
 deployment.apps/demo-deploy created
 $ kubectl get all
 NAME                               READY   STATUS    RESTARTS   AGE
@@ -164,7 +164,7 @@ $ curl -s $DEMO_SVC_IP:80 | head -n 4
 環境の初期化。service と deployment を削除しておく。
 
 ```
-$ kubectl delete -f 101_demo-svc.yml -f 102_demo-dep.yml
+$ kubectl delete -f 101_demo-svc.yml -f 102_demo-deploy.yml
 service "demo-svc" deleted
 deployment.apps "demo-deploy" deleted
 ```
@@ -535,7 +535,7 @@ rolebinding.rbac.authorization.k8s.io/rolebind-default-privileged-ns_demo_servic
 service と deployment を作成。
 
 ```
-$ kubectl -n demo apply -f 101_demo-svc.yml,102_demo-dep.yml
+$ kubectl -n demo apply -f 101_demo-svc.yml,102_demo-deploy.yml
 service/demo-svc created
 deployment.apps/demo-deploy created
 ```
@@ -570,7 +570,7 @@ $ curl http://192.168.70.36/
 初期化。
 
 ```
-$ kubectl -n demo delete -f 101_demo-svc.yml,102_demo-dep.yml
+$ kubectl -n demo delete -f 101_demo-svc.yml,102_demo-deploy.yml
 service "demo-svc" deleted
 deployment.apps "demo-deploy" deleted
 ```
