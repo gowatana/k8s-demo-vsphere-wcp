@@ -783,4 +783,33 @@ persistentvolumeclaim "demo-pvc-nginx-ss-1" deleted
 persistentvolumeclaim "demo-pvc-nginx-ss-2" deleted
 ```
 
+kubeconfig vsphere logout を実行すると、context が unset される。
+
+```
+$ kubectl vsphere logout
+Your KUBECONFIG context has changed.
+The current KUBECONFIG context is unset.
+To change context, use `kubectl config use-context <workload name>`
+Logged out of all vSphere namespaces.
+$ kubectl config current-context
+error: current-context is not set
+$ kubectl config get-contexts
+CURRENT   NAME   CLUSTER   AUTHINFO   NAMESPACE
+```
+
+KUBECONFIG のファイルが空になる。
+
+```
+$ echo $KUBECONFIG
+./kubeconfig
+$ cat ./kubeconfig
+apiVersion: v1
+clusters: []
+contexts: []
+current-context: ""
+kind: Config
+preferences: {}
+users: []
+```
+
 EOF
