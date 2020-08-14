@@ -28,7 +28,7 @@ spec:
   - metadata:
       name: demo-pvc
       annotations:
-        volume.beta.kubernetes.io/storage-class: "vsan-ftt-0"
+        volume.beta.kubernetes.io/storage-class: "vm-storage-policy-wcp"
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
