@@ -3,8 +3,6 @@ kind: Service
 apiVersion: v1
 metadata:
   name: demo-svc
-  labels:
-    app: demo
 spec:
   type: LoadBalancer
   ports:
