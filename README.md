@@ -522,7 +522,7 @@ tkg-cluster-01-workers-82dgq-7d6659ccd9-xbq9j   Ready    <none>   115s    v1.16.
 tkg-cluster-01-workers-82dgq-7d6659ccd9-zcqgp   Ready    <none>   12m     v1.16.8+vmware.1
 ```
 
-##【TKC】Demo-0: Namespace の作成
+## 【TKC】Demo-0: Namespace の作成
 
 Namespace を作成する。
 
