@@ -1,0 +1,35 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: demo-centos7-svc
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: demo-httpd
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: demo-centos7-httpd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-httpd
+  template:
+    metadata:
+      labels:
+        app: demo-httpd
+    spec:
+      containers:
+      - name: httpd
+        image: gowatana/centos7:httpd
+        ports:
+        - containerPort: 80
+
