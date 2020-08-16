@@ -32,4 +32,5 @@ spec:
         image: gowatana/centos7:httpd
         ports:
         - containerPort: 80
+          protocol: TCP
 
