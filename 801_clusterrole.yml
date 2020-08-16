@@ -4,12 +4,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: psp:privileged
 rules:
-- apiGroups:
+- resourceNames:
+  - vmware-system-privileged
+  apiGroups:
   - policy
   resources:
   - podsecuritypolicies
   verbs:
   - use
-  resourceNames:
-  - vmware-system-privileged
 
